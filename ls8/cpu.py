@@ -11,10 +11,10 @@ class CPU:
         self.pc = 0
 
     def ram_read(self, address):
-        return self.ram[address]
+        return self.reg[address]
 
     def ram_write(self, value, address):
-        self.ram[address] = value
+        self.reg[address] = value
         
     def load(self):
         """Load a program into memory."""
@@ -47,6 +47,8 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
+        elif op == "MULTIPLY":
+            self.reg[reg_a] *= self.reg[reg_b]
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -76,8 +78,8 @@ class CPU:
         running = True
         while running:
             instruction_register = self.pc
-            operand_a = self.ram_read(instruction_register + 1)
-            operand_b = self.ram_read(instruction_register + 2)
+            operand_a = self.ram[instruction_register + 1]
+            operand_b = self.ram[instruction_register + 2]
 
             #LDI
             if self.ram[instruction_register] == 0b10000010:
@@ -88,6 +90,11 @@ class CPU:
             elif self.ram[instruction_register] == 0b01000111:
                 print(self.ram_read(operand_a))
                 self.pc += 2
+
+            #MUL
+            elif self.ram[instruction_register] == 0b10100010:
+                self.alu('MULTIPLY', operand_a, operand_b)
+                self.pc += 3
 
             #HLT
             elif self.ram[instruction_register] == 0b00000001:

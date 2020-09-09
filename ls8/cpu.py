@@ -17,32 +17,38 @@ class CPU:
         self.branch_table[0b01000101] = self.PUSH
         self.branch_table[0b01000110] = self.POP
         
-
     def ram_read(self, address):
         return self.ram[address]
 
     def ram_write(self, value, address):
         self.ram[address] = value
 
-    def LDI(self, operand_a, operand_b):
+    def LDI(self):
+        operand_a = self.ram[self.pc + 1]
+        operand_b = self.ram[self.pc + 2]
         self.reg[operand_a] = operand_b
         self.pc += 3
 
-    def PRN(self, operand_a, operand_b):
+    def PRN(self):
+        operand_a = self.ram[self.pc + 1]
         print(self.reg[operand_a])
         self.pc += 2
 
-    def MUL(self, operand_a, operand_b):
+    def MUL(self):
+        operand_a = self.ram[self.pc + 1]
+        operand_b = self.ram[self.pc + 2]
         self.alu('MULTIPLY', operand_a, operand_b)
         self.pc += 3
 
-    def PUSH(self, operand_a, operand_b):
+    def PUSH(self):
+        operand_a = self.ram[self.pc + 1]
         self.sp -= 1
         value = self.reg[operand_a]
         self.ram[self.sp] = value
         self.pc += 2
 
-    def POP(self, operand_a, operand_b):
+    def POP(self):
+        operand_a = self.ram[self.pc + 1]
         value = self.ram[self.sp]
         self.reg[operand_a] = value
         self.sp += 1
@@ -110,20 +116,13 @@ class CPU:
 
         running = True
         while running:
-            instruction_register = self.pc
-            operand_a = self.ram[instruction_register + 1]
-            operand_b = self.ram[instruction_register + 2]
-
             #HLT
-            if self.ram[instruction_register] == 0b00000001:
+            if self.ram[self.pc] == 0b00000001:
                 running = False 
 
             else:
-                self.branch_table[self.ram[instruction_register]](operand_a, operand_b)
+                self.branch_table[self.ram[self.pc]]()
 
-            # else:
-            #     print(f'unknown command {self.ram[self.pc]}')
-            #     running = False
 
 
 

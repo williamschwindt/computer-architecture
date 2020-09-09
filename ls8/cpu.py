@@ -11,12 +11,42 @@ class CPU:
         self.pc = 0
         self.sp = self.reg[6]
         self.branch_table = {}
+        self.branch_table[0b10000010] = self.LDI
+        self.branch_table[0b01000111] = self.PRN
+        self.branch_table[0b10100010] = self.MUL
+        self.branch_table[0b01000101] = self.PUSH
+        self.branch_table[0b01000110] = self.POP
+        
 
     def ram_read(self, address):
         return self.ram[address]
 
     def ram_write(self, value, address):
         self.ram[address] = value
+
+    def LDI(self, operand_a, operand_b):
+        self.reg[operand_a] = operand_b
+        self.pc += 3
+
+    def PRN(self, operand_a, operand_b):
+        print(self.reg[operand_a])
+        self.pc += 2
+
+    def MUL(self, operand_a, operand_b):
+        self.alu('MULTIPLY', operand_a, operand_b)
+        self.pc += 3
+
+    def PUSH(self, operand_a, operand_b):
+        self.sp -= 1
+        value = self.reg[operand_a]
+        self.ram[self.sp] = value
+        self.pc += 2
+
+    def POP(self, operand_a, operand_b):
+        value = self.ram[self.sp]
+        self.reg[operand_a] = value
+        self.sp += 1
+        self.pc += 2
         
     def load(self):
         """Load a program into memory."""
@@ -77,48 +107,23 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
+
         running = True
         while running:
             instruction_register = self.pc
             operand_a = self.ram[instruction_register + 1]
             operand_b = self.ram[instruction_register + 2]
 
-            #LDI
-            if self.ram[instruction_register] == 0b10000010:
-                self.reg[operand_a] = operand_b
-                self.pc += 3
-
-            #PRN
-            elif self.ram[instruction_register] == 0b01000111:
-                print(self.reg[operand_a])
-                self.pc += 2
-
-            #MUL
-            elif self.ram[instruction_register] == 0b10100010:
-                self.alu('MULTIPLY', operand_a, operand_b)
-                self.pc += 3
-
-            #PUSH
-            elif self.ram[instruction_register] == 0b01000101:
-                self.sp -= 1
-                value = self.reg[operand_a]
-                self.ram[self.sp] = value
-                self.pc += 2
-
-            #POP
-            elif self.ram[instruction_register] == 0b01000110:
-                value = self.ram[self.sp]
-                self.reg[operand_a] = value
-                self.sp += 1
-                self.pc += 2
-
             #HLT
-            elif self.ram[instruction_register] == 0b00000001:
-                running = False
+            if self.ram[instruction_register] == 0b00000001:
+                running = False 
 
             else:
-                print(f'unknown command {self.ram[self.pc]}')
-                running = False
+                self.branch_table[self.ram[instruction_register]](operand_a, operand_b)
+
+            # else:
+            #     print(f'unknown command {self.ram[self.pc]}')
+            #     running = False
 
 
 

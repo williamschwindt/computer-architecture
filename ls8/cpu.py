@@ -7,14 +7,16 @@ class CPU:
 
     def __init__(self):
         self.ram = [0] * 256
-        self.reg = [0] * 8
+        self.reg = [0,0,0,0,0,0,244,0]
         self.pc = 0
+        self.sp = self.reg[6]
+        self.branch_table = {}
 
     def ram_read(self, address):
-        return self.reg[address]
+        return self.ram[address]
 
     def ram_write(self, value, address):
-        self.reg[address] = value
+        self.ram[address] = value
         
     def load(self):
         """Load a program into memory."""
@@ -83,18 +85,32 @@ class CPU:
 
             #LDI
             if self.ram[instruction_register] == 0b10000010:
-                self.ram_write(operand_b, operand_a)
+                self.reg[operand_a] = operand_b
                 self.pc += 3
 
             #PRN
             elif self.ram[instruction_register] == 0b01000111:
-                print(self.ram_read(operand_a))
+                print(self.reg[operand_a])
                 self.pc += 2
 
             #MUL
             elif self.ram[instruction_register] == 0b10100010:
                 self.alu('MULTIPLY', operand_a, operand_b)
                 self.pc += 3
+
+            #PUSH
+            elif self.ram[instruction_register] == 0b01000101:
+                self.sp -= 1
+                value = self.reg[operand_a]
+                self.ram[self.sp] = value
+                self.pc += 2
+
+            #POP
+            elif self.ram[instruction_register] == 0b01000110:
+                value = self.ram[self.sp]
+                self.reg[operand_a] = value
+                self.sp += 1
+                self.pc += 2
 
             #HLT
             elif self.ram[instruction_register] == 0b00000001:

@@ -12,6 +12,7 @@ class CPU:
         self.pc = 0
         self.sp = 7
         self.reg[self.sp] = 0xf4
+        self.fl = 0b00000000
         self.branch_table = {}
         self.branch_table[0b10000010] = self.LDI
         self.branch_table[0b01000111] = self.PRN
@@ -22,6 +23,7 @@ class CPU:
         self.branch_table[0b01000110] = self.POP
         self.branch_table[0b01010000] = self.CALL
         self.branch_table[0b00010001] = self.RET
+        self.branch_table[0b10100111] = self.CMP
         
     def ram_read(self, address):
         return self.ram[address]
@@ -30,40 +32,32 @@ class CPU:
         self.ram[address] = value
 
     def LDI(self):
-        # print('LDI ran')
         operand_a = self.ram[self.pc + 1]
         operand_b = self.ram[self.pc + 2]
-        print(operand_a)
-        print(operand_b)
         self.reg[operand_a] = operand_b
         self.pc += 3
 
     def PRN(self):
-        # print('PRN ran')
         operand_a = self.ram[self.pc + 1]
         print(self.reg[operand_a])
         self.pc += 2
 
     def HLT(self):
-        # print('HLT ran')
         self.running = False
 
     def ADD(self):
-        # print('add ran')
         operand_a = self.ram[self.pc + 1]
         operand_b = self.ram[self.pc + 2]
         self.alu("ADD", operand_a, operand_b)
         self.pc += 3
 
     def MUL(self):
-        # print('MUL ran')
         operand_a = self.ram[self.pc + 1]
         operand_b = self.ram[self.pc + 2]
         self.alu('MULTIPLY', operand_a, operand_b)
         self.pc += 3
 
     def PUSH(self):
-        # print('PUSH ran')
         operand_a = self.ram[self.pc + 1]
         self.sp -= 1
         value = self.reg[operand_a]
@@ -71,7 +65,6 @@ class CPU:
         self.pc += 2
 
     def POP(self):
-        # print('POP ran')
         operand_a = self.ram[self.pc + 1]
         value = self.ram[self.sp]
         self.reg[operand_a] = value
@@ -79,7 +72,6 @@ class CPU:
         self.pc += 2
 
     def CALL(self):
-        print('CALL ran')
         return_address = self.pc + 2
         self.reg[self.sp] -= 1
         self.ram[self.reg[self.sp]] = return_address
@@ -88,11 +80,15 @@ class CPU:
         self.pc = dest
 
     def RET(self):
-        # print('RET ran')
-        # print('retrurn address', self.ram[self.reg[self.sp]])
-        # print('stack pointer', self.reg[self.sp])
         self.pc = self.ram[self.reg[self.sp]]
         self.reg[self.sp] += 1
+
+    def CMP(self):
+        reg_a = self.ram[self.pc + 1]
+        reg_b = self.ram[self.pc + 2]
+        self.alu('COMPARE', reg_a, reg_b)
+        print(bin(self.fl))
+        self.pc += 3
         
     def load(self):
         """Load a program into memory."""
@@ -125,9 +121,18 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
+
         elif op == "MULTIPLY":
             self.reg[reg_a] *= self.reg[reg_b]
-        #elif op == "SUB": etc
+
+        elif op == "COMPARE":
+            if self.reg[reg_a] < self.reg[reg_b]:
+                self.fl = 0b00000100
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.fl = 0b00000010
+            elif self.reg[reg_a] == self.reg[reg_b]:
+                self.fl = 0b00000001
+
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -152,10 +157,8 @@ class CPU:
         print()
 
     def run(self):
-        print(self.ram)
         """Run the CPU."""
         self.running = True
-        print('run started')
     
         while self.running:
             IR = self.ram[self.pc]
@@ -166,6 +169,5 @@ class CPU:
                 self.branch_table[IR]()
 
             else:
-                print('Run ended')
                 print(f'unknown command {IR}')
                 self.running = False

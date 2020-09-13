@@ -24,6 +24,9 @@ class CPU:
         self.branch_table[0b01010000] = self.CALL
         self.branch_table[0b00010001] = self.RET
         self.branch_table[0b10100111] = self.CMP
+        self.branch_table[0b01010100] = self.JMP
+        self.branch_table[0b01010101] = self.JEQ
+        self.branch_table[0b01010110] = self.JNE
         
     def ram_read(self, address):
         return self.ram[address]
@@ -87,9 +90,31 @@ class CPU:
         reg_a = self.ram[self.pc + 1]
         reg_b = self.ram[self.pc + 2]
         self.alu('COMPARE', reg_a, reg_b)
-        print(bin(self.fl))
         self.pc += 3
-        
+
+    def JMP(self):
+        reg_a = self.ram[self.pc + 1]
+        address = self.reg[reg_a]
+        self.pc = address
+
+    def JEQ(self):
+        mask = bin(0b00000001 & self.fl)
+        if mask == '0b1':
+            reg_a = self.ram[self.pc + 1]
+            address = self.reg[reg_a]
+            self.pc = address
+        else:
+            self.pc += 2
+
+    def JNE(self):
+        mask = bin(0b00000001 & self.fl)
+        if mask == '0b0':
+            reg_a = self.ram[self.pc + 1]
+            address = self.reg[reg_a]
+            self.pc = address
+        else:
+            self.pc += 2
+
     def load(self):
         """Load a program into memory."""
 
@@ -162,7 +187,7 @@ class CPU:
     
         while self.running:
             IR = self.ram[self.pc]
-            # print(IR)
+            # print(bin(IR))
  
             if IR in self.branch_table:
                 # print(self.branch_table[self.ram[self.pc]])

@@ -165,6 +165,7 @@ class CPU:
         self.pc = address
         #interrupts
         self.time = int(datetime.now().strftime("%Y-%m-%d %H:%M:%S")[-2:])
+        self.reg[0] = 15
 
 
     def load(self):
@@ -271,7 +272,7 @@ class CPU:
 
             else:
                 IR = self.ram[self.pc]
-                print(bin(IR))
+                # print(bin(IR))
     
                 if IR in self.branch_table:
                     # print(self.branch_table[self.ram[self.pc]])
